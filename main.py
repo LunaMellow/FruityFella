@@ -2,7 +2,10 @@
 ############################################
 
 # Imports
+import os
+import json
 import asyncio
+from typing import Any, Coroutine
 
 import aiohttp
 from aiohttp import web
@@ -12,6 +15,9 @@ from classes.hue_client import HueClient
 from classes.consts import Consts
 
 class Bot(commands.Bot):
+
+    clients = []
+
     def __init__(self):
 
         ############################################
@@ -89,6 +95,14 @@ class Bot(commands.Bot):
     #                  Triggers                #
     ############################################
 
+    async def push_overlay_event(self, reward: str):
+        data = f"data: {json.dumps({'reward': reward})}\n\n"
+        for client in list(self.clients):
+            try:
+                await client.write(data.encode("utf-8"))
+            except Exception:
+                self.clients.remove(client)
+
     async def trigger_reward(self, reward_name: str | None = None, bits: int | None = None):
         reward = None
 
@@ -102,6 +116,9 @@ class Bot(commands.Bot):
                 reward = "gold"
             elif bits >= 10:
                 reward = "fbi"
+
+        if reward in ["flashbang", "gold", "fbi"]:
+            await self.push_overlay_event(reward)
 
         if reward == "flashbang":
             await self.flashbang_internal()
@@ -214,14 +231,39 @@ class Bot(commands.Bot):
             await self.trigger_reward(reward_name=reward, bits=bits)
             return web.Response(text="ok")
 
-        app.router.add_post("/trigger", handle_trigger)
+        async def handle_overlay(request):
+            return web.FileResponse(Consts.OVERLAY_PATH)
 
+        async def overlay_events(request):
+            response = web.StreamResponse(
+                status=200,
+                reason='OK',
+                headers={
+                    'Content-Type': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive',
+                }
+            )
+            await response.prepare(request)
+            self.clients.append(response)
+
+            try:
+                while True:
+                    await asyncio.sleep(10)
+            except asyncio.CancelledError:
+                self.clients.remove(response)
+
+        # ✅ Register routes first — before starting the server
+        app.router.add_post("/trigger", handle_trigger)
+        app.router.add_get("/overlay", handle_overlay)
+        app.router.add_get("/overlay-events", overlay_events)
+
+        # ✅ Start server after all routes are registered
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, "localhost", 6969)
         await site.start()
         print("Bot internal API running on http://localhost:6969")
-
 
     async def event_ready(self):
         print(f"Logging in as {self.nick}"

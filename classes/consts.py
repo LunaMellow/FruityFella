@@ -36,3 +36,8 @@ class Consts:
     ############################################
     RED_SCENE_ID = os.environ['HUE_RED_SCENE_ID']
     BLUE_SCENE_ID = os.environ['HUE_BLUE_SCENE_ID']
+
+    ############################################
+    #                   Paths                  #
+    ############################################
+    OVERLAY_PATH = "browsersource/overlay.html"
