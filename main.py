@@ -91,6 +91,12 @@ class Bot(commands.Bot):
         )
         await self.hue.restore_scene(previous_scene)
 
+    # Sax mode activated
+    @commands.command(name="love")
+    async def love(self, ctx):
+        await ctx.send("Sax mode activated 💘")
+        await self.love_internal()
+
     ############################################
     #                  Triggers                #
     ############################################
@@ -113,11 +119,13 @@ class Bot(commands.Bot):
             if bits >= 100:
                 reward = "flashbang"
             elif bits >= 50:
+                reward = "love"
+            elif bits >= 25:
                 reward = "gold"
             elif bits >= 10:
                 reward = "fbi"
 
-        if reward in ["flashbang", "gold", "fbi"]:
+        if reward in ["flashbang", "gold", "fbi", "love"]:
             await self.push_overlay_event(reward)
 
         if reward == "flashbang":
@@ -126,6 +134,8 @@ class Bot(commands.Bot):
             await self.gold_internal()
         elif reward == "fbi":
             await self.fbi_internal()
+        elif reward == "love":
+            await self.love_internal()
         else:
             print(f"[Trigger] Unknown reward or cheer amount: {reward_name}, bits={bits}")
 
@@ -157,6 +167,17 @@ class Bot(commands.Bot):
             red_scene_id=self.red_scene_id,
             blue_scene_id=self.blue_scene_id
         )
+        await self.hue.restore_scene(previous_scene)
+
+    async def love_internal(self):
+        print("[Trigger] Love")
+        asyncio.create_task(play_sound("assets/love.mp3"))
+        previous_scene = await self.hue.get_active_scene()
+        await self.hue.love(
+            light_ids=[self.play_left_id, self.play_right_id],
+            on=True
+        )
+        await asyncio.sleep(14)
         await self.hue.restore_scene(previous_scene)
 
     ############################################
