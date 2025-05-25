@@ -100,3 +100,17 @@ class HueClient:
             await asyncio.sleep(0.6)
             await self.trigger_scene(red_scene_id)
             await asyncio.sleep(0.6)
+
+    async def love(self, light_ids: list[str], on: bool = True):
+        async with aiohttp.ClientSession() as session:
+            payload = {
+                "on": {"on": on},
+                "dimming": {"brightness": 100},
+                "color": {
+                    "xy": {
+                        "x": 0.5,
+                        "y": 0.3
+                    }
+                }
+            }
+            await self.set_all(session, light_ids, payload)
