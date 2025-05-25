@@ -89,13 +89,28 @@ class Bot(commands.Bot):
     #                  Triggers                #
     ############################################
 
-    async def trigger_reward(self, reward_name: str):
-        if reward_name.lower() == "flashbang":
+    async def trigger_reward(self, reward_name: str | None = None, bits: int | None = None):
+        reward = None
+
+        if reward_name:
+            reward = reward_name.lower().strip()
+
+        elif bits is not None:
+            if bits >= 100:
+                reward = "flashbang"
+            elif bits >= 50:
+                reward = "gold"
+            elif bits >= 10:
+                reward = "fbi"
+
+        if reward == "flashbang":
             await self.flashbang_internal()
-        elif reward_name.lower() == "gold":
+        elif reward == "gold":
             await self.gold_internal()
-        elif reward_name.lower() == "fbi":
+        elif reward == "fbi":
             await self.fbi_internal()
+        else:
+            print(f"[Trigger] Unknown reward or cheer amount: {reward_name}, bits={bits}")
 
     async def flashbang_internal(self):
         print("[Trigger] Flashbang")
@@ -154,11 +169,12 @@ class Bot(commands.Bot):
 
     @commands.command(name="mockcheer")
     async def mockcheer(self, ctx):
-        await ctx.send("Mocking a cheer event...")
+        bits = 10
+        await ctx.send(f"Mocking a cheer of {bits} bits...")
 
         status = await send_fake_event("channel.cheer", {
             "user_name": "CheeryLuna",
-            "bits": 100
+            "bits": bits
         })
 
         await ctx.send(f"Mock cheer sent! Server responded with status {status}")
@@ -192,8 +208,10 @@ class Bot(commands.Bot):
         async def handle_trigger(request):
             data = await request.json()
             reward = data.get("reward")
-            print(f"Received internal reward trigger: {reward}")
-            await self.trigger_reward(reward)
+            bits = data.get("bits")
+
+            print(f"Received internal trigger: reward={reward}, bits={bits}")
+            await self.trigger_reward(reward_name=reward, bits=bits)
             return web.Response(text="ok")
 
         app.router.add_post("/trigger", handle_trigger)
@@ -204,8 +222,10 @@ class Bot(commands.Bot):
         await site.start()
         print("Bot internal API running on http://localhost:6969")
 
+
     async def event_ready(self):
-        print(f"Logging in as {self.nick}\n-----------------------------")
+        print(f"Logging in as {self.nick}"
+              f"\n-----------------------------")
         await self.start_webhook_server()
 
     async def event_message(self, message):
