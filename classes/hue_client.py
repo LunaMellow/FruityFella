@@ -1,4 +1,4 @@
-# File: HueClient.py
+# File: hue_client.py
 ############################################
 
 # Imports
@@ -51,7 +51,6 @@ class HueClient:
                     json=payload,
                     ssl=False
             ) as resp:
-                print(f"Trigger scene {scene_id}: {resp.status}")
                 if resp.status != 200:
                     print(await resp.text())
 
@@ -94,7 +93,7 @@ class HueClient:
                 "color_temperature": {"mirek": 400}
             })
 
-    async def fbi(self, red_scene_id: str, blue_scene_id: str, loop_count: int = 5):
+    async def fbi(self, red_scene_id: str, blue_scene_id: str, loop_count: int = 6):
         await asyncio.sleep(1)
         for _ in range(loop_count):
             await self.trigger_scene(blue_scene_id)

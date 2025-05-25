@@ -1,4 +1,4 @@
-# File: Consts.py
+# File: consts.py
 ############################################
 
 # Imports
@@ -9,10 +9,16 @@ class Consts:
     ############################################
     #               Credentials                #
     ############################################
-    TOKEN = os.environ['TOKEN']
-    CLIENT_ID = os.environ['CLIENT_ID']
+    TOKEN = os.environ['TWITCH_TOKEN']
+    SECRET = os.environ['TWITCH_SECRET']
+    CLIENT_ID = os.environ['TWITCH_CLIENT_ID']
     INITIAL_CHANNELS = ['Plumhoe']
     PREFIX = '!'
+
+    # Secrets
+    ACCESS_TOKEN = os.environ['TWITCH_ACCESS_TOKEN']
+    BROADCASTER_ID = os.environ['TWITCH_BROADCASTER_ID']
+    CALLBACK_URL = os.environ['TWITCH_CALLBACK_URL']
 
     # HUE API Login
     BASE_URL = os.environ['HUE_BASE_URL']

@@ -6,3 +6,6 @@
 
 # Env
 .env
+
+# Registration
+/utils/register_subs.py
