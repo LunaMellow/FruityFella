@@ -4,9 +4,9 @@
 # Imports
 import asyncio
 from twitchio.ext import commands
-from HueClient import HueClient
-from Util import play_sound
-from Consts import Consts
+from utils.Util import play_sound
+from classes.HueClient import HueClient
+from classes.Consts import Consts
 
 class Bot(commands.Bot):
     def __init__(self):
