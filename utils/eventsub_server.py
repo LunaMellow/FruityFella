@@ -34,6 +34,16 @@ async def forward_reward(reward):
         except Exception as e:
             print(f"Failed to forward reward: {e}")
 
+async def forward_cheer(user, bits):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.post(
+                "http://localhost:6969/trigger",
+                json={"user": user, "bits": bits}
+            ) as resp:
+                print(f"Forwarded cheer to bot: {resp.status}")
+        except Exception as e:
+            print(f"Cheer forward failed: {e}")
 
 async def handle_eventsub(request):
     body = await request.read()
@@ -45,8 +55,8 @@ async def handle_eventsub(request):
 
     data = json.loads(body.decode())
 
-    print("Received raw body:")
-    print(json.dumps(data, indent=2))
+    #print("Received raw body:")
+    #print(json.dumps(data, indent=2))
 
     if data.get("challenge"):
         print("Responding to challenge verification.")
@@ -63,12 +73,15 @@ async def handle_eventsub(request):
 
         asyncio.create_task(forward_reward(reward))
 
-
     elif event_type == "channel.subscribe":
         print(f"{event['user_name']} just subscribed!")
 
+
     elif event_type == "channel.cheer":
-        print(f"{event['user_name']} cheered {event['bits']} bits!")
+        user = event["user_name"]
+        bits = int(event["bits"])
+        print(f"{user} cheered {bits} bits!")
+        asyncio.create_task(forward_cheer(user, bits))
 
     return web.Response(status=200)
 
