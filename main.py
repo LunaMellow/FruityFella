@@ -41,144 +41,11 @@ class Bot(commands.Bot):
         self.play_left_id = Consts.PLAY_LEFT_ID
         self.play_right_id = Consts.PLAY_RIGHT_ID
 
-        ############################################
-        #                  Scenes                  #
-        ############################################
-        self.red_scene_id = Consts.RED_SCENE_ID
-        self.blue_scene_id = Consts.BLUE_SCENE_ID
-
-
     ############################################
     #                 Commands                 #
     ############################################
 
-    # FLASHBANG OUT!
-    @commands.command(name="flashbang")
-    async def flashbang(self, ctx):
-        await ctx.send("FLASHBANG OUT!")
-        asyncio.create_task(play_sound("assets/flash.mp3"))
 
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.flashbang(
-            light_ids=[self.play_left_id, self.play_right_id],
-            on=True
-        )
-        await self.hue.restore_scene(previous_scene)
-
-    # GOLD GOLD GOLD
-    @commands.command(name="gold")
-    async def gold(self, ctx):
-        await ctx.send("GOLD GOLD GOLD")
-        asyncio.create_task(play_sound("assets/gold.mp3"))
-
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.gold(
-            light_ids=[self.play_left_id, self.play_right_id],
-            on=True
-        )
-        await self.hue.restore_scene(previous_scene)
-
-    # FBI OPEN UP!
-    @commands.command(name="fbi")
-    async def fbi(self, ctx):
-        await ctx.send("FBI OPEN UP!")
-        asyncio.create_task(play_sound("assets/fbi.mp3"))
-
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.fbi(
-            red_scene_id=self.red_scene_id,
-            blue_scene_id=self.blue_scene_id
-        )
-        await self.hue.restore_scene(previous_scene)
-
-    # Sax mode activated
-    @commands.command(name="love")
-    async def love(self, ctx):
-        await ctx.send("Sax mode activated 💘")
-        await self.love_internal()
-
-    ############################################
-    #                  Triggers                #
-    ############################################
-
-    async def push_overlay_event(self, reward: str):
-        data = f"data: {json.dumps({'reward': reward})}\n\n"
-        for client in list(self.clients):
-            try:
-                await client.write(data.encode("utf-8"))
-            except Exception:
-                self.clients.remove(client)
-
-    async def trigger_reward(self, reward_name: str | None = None, bits: int | None = None):
-        reward = None
-
-        if reward_name:
-            reward = reward_name.lower().strip()
-
-        elif bits is not None:
-            if bits >= 100:
-                reward = "flashbang"
-            elif bits >= 50:
-                reward = "love"
-            elif bits >= 25:
-                reward = "gold"
-            elif bits >= 10:
-                reward = "fbi"
-
-        if reward in ["flashbang", "gold", "fbi", "love"]:
-            await self.push_overlay_event(reward)
-
-        if reward == "flashbang":
-            await self.flashbang_internal()
-        elif reward == "gold":
-            await self.gold_internal()
-        elif reward == "fbi":
-            await self.fbi_internal()
-        elif reward == "love":
-            await self.love_internal()
-        else:
-            print(f"[Trigger] Unknown reward or cheer amount: {reward_name}, bits={bits}")
-
-    async def flashbang_internal(self):
-        print("[Trigger] Flashbang")
-        asyncio.create_task(play_sound("assets/flash.mp3"))
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.flashbang(
-            light_ids=[self.play_left_id, self.play_right_id],
-            on=True
-        )
-        await self.hue.restore_scene(previous_scene)
-
-    async def gold_internal(self):
-        print("[Trigger] Gold")
-        asyncio.create_task(play_sound("assets/gold.mp3"))
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.gold(
-            light_ids=[self.play_left_id, self.play_right_id],
-            on=True
-        )
-        await self.hue.restore_scene(previous_scene)
-
-    async def fbi_internal(self):
-        print("[Trigger] FBI")
-        asyncio.create_task(play_sound("assets/fbi.mp3"))
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.fbi(
-            red_scene_id=self.red_scene_id,
-            blue_scene_id=self.blue_scene_id
-        )
-        await self.hue.restore_scene(previous_scene)
-
-    async def love_internal(self):
-        print("[Trigger] Love")
-        asyncio.create_task(play_sound("assets/love.mp3"))
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.love(
-            light_ids=[self.play_left_id, self.play_right_id],
-            on=True
-        )
-        await asyncio.sleep(14)
-        await self.hue.restore_scene(previous_scene)
 
     ############################################
     #                   Debug                  #
@@ -188,12 +55,14 @@ class Bot(commands.Bot):
     async def mocksub(self, ctx):
         await ctx.send("Mocking a subscription event...")
 
-        payload = {
+        payload = \
+        {
             "subscription": {
                 "type": "channel.subscribe"
             },
             "event": {
-                "user_name": "FakeUser123"
+                "user_name": "FakeUser123",
+                "tier": "1000"
             }
         }
 
@@ -204,6 +73,17 @@ class Bot(commands.Bot):
             ) as resp:
                 status = resp.status
                 await ctx.send(f"Mock sub sent! Server responded with status {status}")
+
+    @commands.command(name="mockfollow")
+    async def mockfollow(self, ctx):
+        await ctx.send("Mocking a follow...")
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    "http://localhost:6969/trigger",
+                    json={"reward": "follow"}
+            ) as resp:
+                await ctx.send(f"Mock follow sent! Status: {resp.status}")
 
     @commands.command(name="mockcheer")
     async def mockcheer(self, ctx):
@@ -235,6 +115,102 @@ class Bot(commands.Bot):
 
         await ctx.send(f"Mock redemption sent! Server responded with status {status}")
 
+    ############################################
+    #                  Triggers                #
+    ############################################
+
+    async def push_overlay_event(self, reward: str):
+        data = f"data: {json.dumps({'reward': reward})}\n\n"
+        for client in list(self.clients):
+            try:
+                await client.write(data.encode("utf-8"))
+            except Exception:
+                self.clients.remove(client)
+
+    async def trigger_reward(self, reward_name: str | None = None, bits: int | None = None):
+        reward = None
+
+        if reward_name:
+            reward = reward_name.lower().strip()
+
+        elif bits is not None:
+            if bits >= 100:
+                reward = "flashbang"
+            elif bits >= 50:
+                reward = "fbi"
+            elif bits >= 25:
+                reward = "gold"
+            elif bits >= 10:
+                reward = "love"
+
+        if reward in ["flashbang", "gold", "fbi", "love", "sub 1000", "sub 2000", "sub 3000", "follow"]:
+            await self.push_overlay_event(reward)
+
+        if reward == "flashbang":
+            await self.flashbang_internal()
+        elif reward == "gold":
+            await self.gold_internal()
+        elif reward == "fbi":
+            await self.fbi_internal()
+        elif reward == "love":
+            await self.love_internal()
+        elif reward == "sub 1000":
+            print("[Trigger] Subscription tier 1 Triggered")
+        elif reward == "sub 2000":
+            print("[Trigger] Subscription tier 2 Triggered")
+        elif reward == "sub 3000":
+            print("[Trigger] Subscription tier 3 Triggered")
+        elif reward == "follow":
+            print("[Trigger] Follow Triggered")
+            await self.party_internal()
+        else:
+            print(f"[Trigger] Unknown reward or cheer amount: {reward_name}, bits={bits}")
+
+    async def flashbang_internal(self):
+        print("[Trigger] Flashbang")
+        asyncio.create_task(play_sound("assets/flash.mp3"))
+        previous_scene = await self.hue.get_active_scene()
+        await self.hue.flashbang(
+            light_ids=[self.play_left_id, self.play_right_id],
+            on=True
+        )
+        await self.hue.restore_scene(previous_scene)
+
+    async def gold_internal(self):
+        print("[Trigger] Gold")
+        asyncio.create_task(play_sound("assets/gold.mp3"))
+        previous_scene = await self.hue.get_active_scene()
+        await self.hue.gold(
+            light_ids=[self.play_left_id, self.play_right_id],
+            on=True
+        )
+        await self.hue.restore_scene(previous_scene)
+
+    async def fbi_internal(self):
+        print("[Trigger] FBI")
+        asyncio.create_task(play_sound("assets/fbi.mp3"))
+        previous_scene = await self.hue.get_active_scene()
+        await self.hue.fbi()
+        await self.hue.restore_scene(previous_scene)
+
+    async def love_internal(self):
+        print("[Trigger] Love")
+        asyncio.create_task(play_sound("assets/love.mp3"))
+        previous_scene = await self.hue.get_active_scene()
+        await self.hue.love(
+            light_ids=[self.play_left_id, self.play_right_id],
+            on=True
+        )
+        await asyncio.sleep(14)
+        await self.hue.restore_scene(previous_scene)
+
+    async def party_internal(self):
+        print("[Trigger] Party (Follow)")
+        asyncio.create_task(play_sound("assets/pedro.mp3"))
+        previous_scene = await self.hue.get_active_scene()
+
+        await self.hue.party_mode()
+        await self.hue.restore_scene(previous_scene)
 
     ############################################
     #                 Functions                #
