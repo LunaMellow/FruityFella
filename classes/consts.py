@@ -34,8 +34,27 @@ class Consts:
     ############################################
     #                  Scenes                  #
     ############################################
+
+    # Collected RED
     RED_SCENE_ID = os.environ['HUE_RED_SCENE_ID']
+
+    # Collected GREEN
+    GREEN_SCENE_ID = os.environ['HUE_GREEN_SCENE_ID']
+
+    # Collected BLUE
     BLUE_SCENE_ID = os.environ['HUE_BLUE_SCENE_ID']
+
+    # Individual RED
+    RED_RIGHT_SCENE_ID = os.environ['HUE_RED_RIGHT_SCENE_ID']
+    RED_LEFT_SCENE_ID = os.environ['HUE_RED_LEFT_SCENE_ID']
+
+    # Individual GREEN
+    GREEN_RIGHT_SCENE_ID = os.environ['HUE_GREEN_RIGHT_SCENE_ID']
+    GREEN_LEFT_SCENE_ID = os.environ['HUE_GREEN_LEFT_SCENE_ID']
+
+    # Individual BLUE
+    BLUE_RIGHT_SCENE_ID = os.environ['HUE_BLUE_RIGHT_SCENE_ID']
+    BLUE_LEFT_SCENE_ID = os.environ['HUE_BLUE_LEFT_SCENE_ID']
 
     ############################################
     #                   Paths                  #

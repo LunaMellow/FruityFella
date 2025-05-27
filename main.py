@@ -41,61 +41,11 @@ class Bot(commands.Bot):
         self.play_left_id = Consts.PLAY_LEFT_ID
         self.play_right_id = Consts.PLAY_RIGHT_ID
 
-        ############################################
-        #                  Scenes                  #
-        ############################################
-        self.red_scene_id = Consts.RED_SCENE_ID
-        self.blue_scene_id = Consts.BLUE_SCENE_ID
-
-
     ############################################
     #                 Commands                 #
     ############################################
 
-    ## FLASHBANG OUT!
-    #@commands.command(name="flashbang")
-    #async def flashbang(self, ctx):
-    #    await ctx.send("FLASHBANG OUT!")
-    #    asyncio.create_task(play_sound("assets/flash.mp3"))
 
-    #    previous_scene = await self.hue.get_active_scene()
-    #    await self.hue.flashbang(
-    #        light_ids=[self.play_left_id, self.play_right_id],
-    #        on=True
-    #    )
-    #    await self.hue.restore_scene(previous_scene)
-
-    ## GOLD GOLD GOLD
-    #@commands.command(name="gold")
-    #async def gold(self, ctx):
-    #    await ctx.send("GOLD GOLD GOLD")
-    #    asyncio.create_task(play_sound("assets/gold.mp3"))
-
-    #    previous_scene = await self.hue.get_active_scene()
-    #    await self.hue.gold(
-    #        light_ids=[self.play_left_id, self.play_right_id],
-    #        on=True
-    #    )
-    #    await self.hue.restore_scene(previous_scene)
-
-    ## FBI OPEN UP!
-    #@commands.command(name="fbi")
-    #async def fbi(self, ctx):
-    #    await ctx.send("FBI OPEN UP!")
-    #    asyncio.create_task(play_sound("assets/fbi.mp3"))
-
-    #    previous_scene = await self.hue.get_active_scene()
-    #    await self.hue.fbi(
-    #        red_scene_id=self.red_scene_id,
-    #        blue_scene_id=self.blue_scene_id
-    #    )
-    #    await self.hue.restore_scene(previous_scene)
-
-    ## Sax mode activated
-    #@commands.command(name="love")
-    #async def love(self, ctx):
-    #    await ctx.send("Sax mode activated 💘")
-    #    await self.love_internal()
 
     ############################################
     #                   Debug                  #
@@ -212,6 +162,7 @@ class Bot(commands.Bot):
             print("[Trigger] Subscription tier 3 Triggered")
         elif reward == "follow":
             print("[Trigger] Follow Triggered")
+            await self.party_internal()
         else:
             print(f"[Trigger] Unknown reward or cheer amount: {reward_name}, bits={bits}")
 
@@ -239,10 +190,7 @@ class Bot(commands.Bot):
         print("[Trigger] FBI")
         asyncio.create_task(play_sound("assets/fbi.mp3"))
         previous_scene = await self.hue.get_active_scene()
-        await self.hue.fbi(
-            red_scene_id=self.red_scene_id,
-            blue_scene_id=self.blue_scene_id
-        )
+        await self.hue.fbi()
         await self.hue.restore_scene(previous_scene)
 
     async def love_internal(self):
@@ -254,6 +202,14 @@ class Bot(commands.Bot):
             on=True
         )
         await asyncio.sleep(14)
+        await self.hue.restore_scene(previous_scene)
+
+    async def party_internal(self):
+        print("[Trigger] Party (Follow)")
+        asyncio.create_task(play_sound("assets/pedro.mp3"))
+        previous_scene = await self.hue.get_active_scene()
+
+        await self.hue.party_mode()
         await self.hue.restore_scene(previous_scene)
 
     ############################################
