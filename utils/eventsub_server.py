@@ -1,4 +1,4 @@
-# File: hue_client.py
+# File: eventsub_server.py
 ############################################
 
 # Imports
@@ -47,6 +47,9 @@ async def forward_cheer(user, bits):
 
 async def handle_eventsub(request):
     body = await request.read()
+    print("=== EventSub request received ===")
+    print(request.headers)
+    print(body.decode())
 
     is_local_request = request.remote in ("127.0.0.1", "::1", "localhost")
     if not is_local_request and not verify_signature(request, body):
@@ -55,12 +58,17 @@ async def handle_eventsub(request):
 
     data = json.loads(body.decode())
 
-    #print("Received raw body:")
-    #print(json.dumps(data, indent=2))
-
+    # ✅ Respond to Twitch challenge BEFORE checking structure
     if data.get("challenge"):
         print("Responding to challenge verification.")
         return web.Response(text=data["challenge"])
+
+    if "subscription" not in data or "event" not in data:
+        print("Invalid EventSub payload received")
+        return web.Response(status=400)
+
+    print("Received raw body:")
+    print(json.dumps(data, indent=2))
 
     event_type = data["subscription"]["type"]
     event = data["event"]
@@ -70,20 +78,27 @@ async def handle_eventsub(request):
     if event_type == "channel.channel_points_custom_reward_redemption.add":
         reward = event["reward"]["title"]
         print(f"Channel Point Redeemed: {reward}")
-
         asyncio.create_task(forward_reward(reward))
 
     elif event_type == "channel.subscribe":
-        print(f"{event['user_name']} just subscribed!")
+        user = event["user_name"]
+        tier = event["tier"]
+        print(f"{user} just subscribed!")
+        asyncio.create_task(forward_reward(f"sub {tier}"))
 
+    elif event_type == "channel.follow":
+        user = event["user_name"]
+        print(f"New follower: {user}")
+        asyncio.create_task(forward_reward("follow"))
 
     elif event_type == "channel.cheer":
-        user = event["user_name"]
-        bits = int(event["bits"])
-        print(f"{user} cheered {bits} bits!")
+        user = event.get("user_name", "unknown")
+        bits = int(event.get("bits", 0))
+        print(f"{user} just cheered {bits} bits!")
         asyncio.create_task(forward_cheer(user, bits))
 
     return web.Response(status=200)
+
 
 app.router.add_post("/eventsub", handle_eventsub)
 

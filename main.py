@@ -52,50 +52,118 @@ class Bot(commands.Bot):
     #                 Commands                 #
     ############################################
 
-    # FLASHBANG OUT!
-    @commands.command(name="flashbang")
-    async def flashbang(self, ctx):
-        await ctx.send("FLASHBANG OUT!")
-        asyncio.create_task(play_sound("assets/flash.mp3"))
+    ## FLASHBANG OUT!
+    #@commands.command(name="flashbang")
+    #async def flashbang(self, ctx):
+    #    await ctx.send("FLASHBANG OUT!")
+    #    asyncio.create_task(play_sound("assets/flash.mp3"))
 
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.flashbang(
-            light_ids=[self.play_left_id, self.play_right_id],
-            on=True
-        )
-        await self.hue.restore_scene(previous_scene)
+    #    previous_scene = await self.hue.get_active_scene()
+    #    await self.hue.flashbang(
+    #        light_ids=[self.play_left_id, self.play_right_id],
+    #        on=True
+    #    )
+    #    await self.hue.restore_scene(previous_scene)
 
-    # GOLD GOLD GOLD
-    @commands.command(name="gold")
-    async def gold(self, ctx):
-        await ctx.send("GOLD GOLD GOLD")
-        asyncio.create_task(play_sound("assets/gold.mp3"))
+    ## GOLD GOLD GOLD
+    #@commands.command(name="gold")
+    #async def gold(self, ctx):
+    #    await ctx.send("GOLD GOLD GOLD")
+    #    asyncio.create_task(play_sound("assets/gold.mp3"))
 
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.gold(
-            light_ids=[self.play_left_id, self.play_right_id],
-            on=True
-        )
-        await self.hue.restore_scene(previous_scene)
+    #    previous_scene = await self.hue.get_active_scene()
+    #    await self.hue.gold(
+    #        light_ids=[self.play_left_id, self.play_right_id],
+    #        on=True
+    #    )
+    #    await self.hue.restore_scene(previous_scene)
 
-    # FBI OPEN UP!
-    @commands.command(name="fbi")
-    async def fbi(self, ctx):
-        await ctx.send("FBI OPEN UP!")
-        asyncio.create_task(play_sound("assets/fbi.mp3"))
+    ## FBI OPEN UP!
+    #@commands.command(name="fbi")
+    #async def fbi(self, ctx):
+    #    await ctx.send("FBI OPEN UP!")
+    #    asyncio.create_task(play_sound("assets/fbi.mp3"))
 
-        previous_scene = await self.hue.get_active_scene()
-        await self.hue.fbi(
-            red_scene_id=self.red_scene_id,
-            blue_scene_id=self.blue_scene_id
-        )
-        await self.hue.restore_scene(previous_scene)
+    #    previous_scene = await self.hue.get_active_scene()
+    #    await self.hue.fbi(
+    #        red_scene_id=self.red_scene_id,
+    #        blue_scene_id=self.blue_scene_id
+    #    )
+    #    await self.hue.restore_scene(previous_scene)
 
-    # Sax mode activated
-    @commands.command(name="love")
-    async def love(self, ctx):
-        await ctx.send("Sax mode activated 💘")
-        await self.love_internal()
+    ## Sax mode activated
+    #@commands.command(name="love")
+    #async def love(self, ctx):
+    #    await ctx.send("Sax mode activated 💘")
+    #    await self.love_internal()
+
+    ############################################
+    #                   Debug                  #
+    ############################################
+
+    @commands.command(name="mocksub")
+    async def mocksub(self, ctx):
+        await ctx.send("Mocking a subscription event...")
+
+        payload = \
+        {
+            "subscription": {
+                "type": "channel.subscribe"
+            },
+            "event": {
+                "user_name": "FakeUser123",
+                "tier": "1000"
+            }
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    "http://localhost:8080/eventsub",
+                    json=payload
+            ) as resp:
+                status = resp.status
+                await ctx.send(f"Mock sub sent! Server responded with status {status}")
+
+    @commands.command(name="mockfollow")
+    async def mockfollow(self, ctx):
+        await ctx.send("Mocking a follow...")
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    "http://localhost:6969/trigger",
+                    json={"reward": "follow"}
+            ) as resp:
+                await ctx.send(f"Mock follow sent! Status: {resp.status}")
+
+    @commands.command(name="mockcheer")
+    async def mockcheer(self, ctx):
+        bits = 10
+        await ctx.send(f"Mocking a cheer of {bits} bits...")
+
+        status = await send_fake_event("channel.cheer", {
+            "user_name": "CheeryLuna",
+            "bits": bits
+        })
+
+        await ctx.send(f"Mock cheer sent! Server responded with status {status}")
+
+    @commands.command(name="mockredemption")
+    async def mockredemption(self, ctx):
+        parts = ctx.message.content.split(" ", 1)
+        if len(parts) != 2:
+            await ctx.send("Usage: !mockredemption <Reward Name>")
+            return
+
+        reward_name = parts[1]
+        await ctx.send(f"Mocking redemption: {reward_name}")
+
+        status = await send_fake_event("channel.channel_points_custom_reward_redemption.add", {
+            "reward": {
+                "title": reward_name
+            }
+        })
+
+        await ctx.send(f"Mock redemption sent! Server responded with status {status}")
 
     ############################################
     #                  Triggers                #
@@ -119,13 +187,13 @@ class Bot(commands.Bot):
             if bits >= 100:
                 reward = "flashbang"
             elif bits >= 50:
-                reward = "love"
+                reward = "fbi"
             elif bits >= 25:
                 reward = "gold"
             elif bits >= 10:
-                reward = "fbi"
+                reward = "love"
 
-        if reward in ["flashbang", "gold", "fbi", "love"]:
+        if reward in ["flashbang", "gold", "fbi", "love", "sub 1000", "sub 2000", "sub 3000", "follow"]:
             await self.push_overlay_event(reward)
 
         if reward == "flashbang":
@@ -136,6 +204,14 @@ class Bot(commands.Bot):
             await self.fbi_internal()
         elif reward == "love":
             await self.love_internal()
+        elif reward == "sub 1000":
+            print("[Trigger] Subscription tier 1 Triggered")
+        elif reward == "sub 2000":
+            print("[Trigger] Subscription tier 2 Triggered")
+        elif reward == "sub 3000":
+            print("[Trigger] Subscription tier 3 Triggered")
+        elif reward == "follow":
+            print("[Trigger] Follow Triggered")
         else:
             print(f"[Trigger] Unknown reward or cheer amount: {reward_name}, bits={bits}")
 
@@ -179,62 +255,6 @@ class Bot(commands.Bot):
         )
         await asyncio.sleep(14)
         await self.hue.restore_scene(previous_scene)
-
-    ############################################
-    #                   Debug                  #
-    ############################################
-
-    @commands.command(name="mocksub")
-    async def mocksub(self, ctx):
-        await ctx.send("Mocking a subscription event...")
-
-        payload = {
-            "subscription": {
-                "type": "channel.subscribe"
-            },
-            "event": {
-                "user_name": "FakeUser123"
-            }
-        }
-
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                    "http://localhost:8080/eventsub",
-                    json=payload
-            ) as resp:
-                status = resp.status
-                await ctx.send(f"Mock sub sent! Server responded with status {status}")
-
-    @commands.command(name="mockcheer")
-    async def mockcheer(self, ctx):
-        bits = 10
-        await ctx.send(f"Mocking a cheer of {bits} bits...")
-
-        status = await send_fake_event("channel.cheer", {
-            "user_name": "CheeryLuna",
-            "bits": bits
-        })
-
-        await ctx.send(f"Mock cheer sent! Server responded with status {status}")
-
-    @commands.command(name="mockredemption")
-    async def mockredemption(self, ctx):
-        parts = ctx.message.content.split(" ", 1)
-        if len(parts) != 2:
-            await ctx.send("Usage: !mockredemption <Reward Name>")
-            return
-
-        reward_name = parts[1]
-        await ctx.send(f"Mocking redemption: {reward_name}")
-
-        status = await send_fake_event("channel.channel_points_custom_reward_redemption.add", {
-            "reward": {
-                "title": reward_name
-            }
-        })
-
-        await ctx.send(f"Mock redemption sent! Server responded with status {status}")
-
 
     ############################################
     #                 Functions                #
