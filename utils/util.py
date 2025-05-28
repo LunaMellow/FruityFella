@@ -26,3 +26,7 @@ async def send_fake_event(_type: str, event_data: dict):
                 headers={"X-Mock-Event": "true"}  # bypass signature
         ) as resp:
             return resp.status
+
+def log(tag, message, color="\033[0m"):
+    print(f"{color}[{tag}]\033[0m {message}")
+
