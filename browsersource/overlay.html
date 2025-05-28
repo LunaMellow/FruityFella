@@ -175,13 +175,16 @@
 
     // Color mapping for different effects
     const colorMap = {
-        flashbang: "white",
-        gold: "gold",
-        fbi: "#4444ff",  // Blue
-        hype: "#ff9900", // Orange
-        love: "#ff66b2", // Pink
-        laugh: "#66ccff", // Light blue
-        surprise: "#9933ff" // Purple
+        flashbang: "white",     // White
+        gold: "gold",           // Gold
+        fbi: "#4444ff",         // Blue
+        hype: "#ff9900",        // Orange
+        love: "#ff66b2",        // Pink
+        laugh: "#66ccff",       // Light blue
+        surprise: "#9933ff",    // Purple
+        sub1000: "#ff66b2",     // Pink
+        sub2000: "#9933ff",     // Purple
+        sub3000: "gold"         // Gold
     };
 
     // Emoji mapping
@@ -272,7 +275,10 @@
         hype: () => showEffect(emojiMap.hype, "HYPE TRAIN!", "hype"),
         love: () => showEffect(emojiMap.love, "LOVE BOMB!", "love"),
         laugh: () => showEffect(emojiMap.laugh, "LOL!", "laugh"),
-        surprise: () => showEffect(emojiMap.surprise, "WOW!", "surprise")
+        surprise: () => showEffect(emojiMap.surprise, "WOW!", "surprise"),
+        sub1000: () => showEffect(emojiMap.love, "Tier 1 Sub!", "sub1000"),
+        sub2000: () => showEffect(emojiMap.love, "Tier 2 Sub!", "sub2000"),
+        sub3000: () => showEffect(emojiMap.love, "Tier 3 Sub!", "sub3000")
     };
 
     const source = new EventSource("http://localhost:6969/overlay-events");

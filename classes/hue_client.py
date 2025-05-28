@@ -144,7 +144,7 @@ class HueClient:
             }
             await self.set_all(session, light_ids, payload)
 
-    async def party_mode(self, loop_count: int = 26):
+    async def party_mode(self, loop_count: int = 24):
         last_scene_id = None
         async with aiohttp.ClientSession() as session:
             for _ in range(loop_count):
@@ -157,11 +157,10 @@ class HueClient:
 
                 last_scene_id = scene["id"]
 
-                now = start.strftime("%H:%M:%S.%f")[:-3]
-                print(f"[{now}] [Party Mode] Scene: {scene['name']}")
+                # print(f"[{now}] [Party Mode] Scene: {scene['name']}")
 
                 await self._trigger_scene(scene["id"], session)
 
                 elapsed = (datetime.now() - start).total_seconds()
-                delay = max(0, 0.6 - elapsed)
+                delay = max(0, 0.5 - elapsed)
                 await asyncio.sleep(delay)

@@ -45,7 +45,9 @@ class Bot(commands.Bot):
     #                 Commands                 #
     ############################################
 
-
+    @commands.command(name="keyboard")
+    async def products(self, ctx):
+        await ctx.send("Dygma Defy w/Wuque Studio WS Brown's and Keychron PBT Keycaps")
 
     ############################################
     #                   Debug                  #
@@ -73,6 +75,30 @@ class Bot(commands.Bot):
             ) as resp:
                 status = resp.status
                 await ctx.send(f"Mock sub sent! Server responded with status {status}")
+
+    @commands.command(name="mockprime")
+    async def mocksub(self, ctx):
+        await ctx.send("Mocking a prime subscription event...")
+
+        payload = \
+        {
+            "subscription": {
+                "type": "channel.subscribe"
+            },
+            "event": {
+                "user_name": "FakeUser123",
+                "tier": "1000",
+                "is_prime": "true"
+            }
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                    "http://localhost:8080/eventsub",
+                    json=payload
+            ) as resp:
+                status = resp.status
+                await ctx.send(f"Mock prime sub sent! Server responded with status {status}")
 
     @commands.command(name="mockfollow")
     async def mockfollow(self, ctx):
@@ -143,31 +169,36 @@ class Bot(commands.Bot):
             elif bits >= 10:
                 reward = "love"
 
-        if reward in ["flashbang", "gold", "fbi", "love", "sub 1000", "sub 2000", "sub 3000", "follow"]:
+        if reward in ["flashbang", "gold", "fbi", "love", "sub1000", "sub2000", "sub3000", "follow"]:
             await self.push_overlay_event(reward)
 
         if reward == "flashbang":
+            print("[Trigger] Flashbang Triggered")
             await self.flashbang_internal()
         elif reward == "gold":
+            print("[Trigger] Gold Triggered")
             await self.gold_internal()
         elif reward == "fbi":
+            print("[Trigger] Fbi Triggered")
             await self.fbi_internal()
         elif reward == "love":
+            print("[Trigger] Love Triggered")
             await self.love_internal()
-        elif reward == "sub 1000":
+        elif reward == "sub1000":
             print("[Trigger] Subscription tier 1 Triggered")
-        elif reward == "sub 2000":
+            await self.party_internal()
+        elif reward == "sub2000":
             print("[Trigger] Subscription tier 2 Triggered")
-        elif reward == "sub 3000":
+            await self.party_internal()
+        elif reward == "sub3000":
             print("[Trigger] Subscription tier 3 Triggered")
+            await self.party_internal()
         elif reward == "follow":
             print("[Trigger] Follow Triggered")
-            await self.party_internal()
         else:
             print(f"[Trigger] Unknown reward or cheer amount: {reward_name}, bits={bits}")
 
     async def flashbang_internal(self):
-        print("[Trigger] Flashbang")
         asyncio.create_task(play_sound("assets/flash.mp3"))
         previous_scene = await self.hue.get_active_scene()
         await self.hue.flashbang(
@@ -177,7 +208,6 @@ class Bot(commands.Bot):
         await self.hue.restore_scene(previous_scene)
 
     async def gold_internal(self):
-        print("[Trigger] Gold")
         asyncio.create_task(play_sound("assets/gold.mp3"))
         previous_scene = await self.hue.get_active_scene()
         await self.hue.gold(
@@ -187,14 +217,12 @@ class Bot(commands.Bot):
         await self.hue.restore_scene(previous_scene)
 
     async def fbi_internal(self):
-        print("[Trigger] FBI")
         asyncio.create_task(play_sound("assets/fbi.mp3"))
         previous_scene = await self.hue.get_active_scene()
         await self.hue.fbi()
         await self.hue.restore_scene(previous_scene)
 
     async def love_internal(self):
-        print("[Trigger] Love")
         asyncio.create_task(play_sound("assets/love.mp3"))
         previous_scene = await self.hue.get_active_scene()
         await self.hue.love(
@@ -205,7 +233,6 @@ class Bot(commands.Bot):
         await self.hue.restore_scene(previous_scene)
 
     async def party_internal(self):
-        print("[Trigger] Party (Follow)")
         asyncio.create_task(play_sound("assets/pedro.mp3"))
         previous_scene = await self.hue.get_active_scene()
 
@@ -224,7 +251,7 @@ class Bot(commands.Bot):
             reward = data.get("reward")
             bits = data.get("bits")
 
-            print(f"Received internal trigger: reward={reward}, bits={bits}")
+            print(f"\n[Webhook] Received internal trigger: reward={reward}, bits={bits}")
             await self.trigger_reward(reward_name=reward, bits=bits)
             return web.Response(text="ok")
 
@@ -260,11 +287,11 @@ class Bot(commands.Bot):
         await runner.setup()
         site = web.TCPSite(runner, "localhost", 6969)
         await site.start()
-        print("Bot internal API running on http://localhost:6969")
+        print("[API] Bot internal API running on http://localhost:6969")
 
     async def event_ready(self):
-        print(f"Logging in as {self.nick}"
-              f"\n-----------------------------")
+        print(f"\n[Twitch] Logging in as {self.nick}"
+              f"\n================================================")
         await self.start_webhook_server()
 
     async def event_message(self, message):
