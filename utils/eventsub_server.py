@@ -9,6 +9,7 @@ import json
 import aiohttp
 from aiohttp import web
 from classes.consts import Consts
+from utils.util import log
 
 def verify_signature(request, body: bytes):
     message_id = request.headers.get("Twitch-Eventsub-Message-Id", "")
@@ -30,9 +31,9 @@ async def forward_reward(reward):
                 "http://localhost:6969/trigger",
                 json={"reward": reward}
             ) as resp:
-                print(f"[Event] Forwarded to bot with status {resp.status}")
+                log("Event", f"Forwarded to bot with status {resp.status}\n", "\033[92m")
         except Exception as e:
-            print(f"[Event] Failed to forward reward: {e}")
+            log("Event", f"Failed to forward reward: {e}", "\033[91m")
 
 async def forward_cheer(user, bits):
     async with aiohttp.ClientSession() as session:
@@ -41,68 +42,69 @@ async def forward_cheer(user, bits):
                 "http://localhost:6969/trigger",
                 json={"user": user, "bits": bits}
             ) as resp:
-                print(f"[Event] Forwarded cheer to bot: {resp.status}")
+                log("Event", f"Forwarded cheer to bot: {resp.status}", "\033[92m")
         except Exception as e:
-            print(f"[Event] Cheer forward failed: {e}")
+            log("Event", f"Cheer forward failed: {e}", "\033[91m")
 
 async def handle_eventsub(request):
     body = await request.read()
 
-    print("=== EventSub request received ===")
-    print(request.headers)
-    print(body.decode())
+    log("EventSub", "=== EventSub request received ===", "\033[94m", True)
+    log("Headers", str(request.headers), "\033[90m")
+
+    raw = body.decode()
+    parsed = json.loads(raw)
+
+    log("Body", json.dumps(parsed, indent=2), "\033[90m")
 
     is_local_request = request.remote in ("127.0.0.1", "::1", "localhost")
     if not is_local_request and not verify_signature(request, body):
-        print("[Data] Signature verification failed.")
+        log("Data", "Signature verification failed.", "\033[91m")
         return web.Response(status=403)
 
     data = json.loads(body.decode())
 
     if data.get("challenge"):
-        print("[Data] Responding to challenge verification.")
+        log("Data", "Responding to challenge verification.", "\033[94m")
         return web.Response(text=data["challenge"])
 
     if "subscription" not in data or "event" not in data:
-        print("[Data] Invalid EventSub payload received")
+        log("Data", "Invalid EventSub payload received", "\033[91m")
         return web.Response(status=400)
 
-    print("\n[Data] Received raw body:")
-    print(json.dumps(data, indent=2))
+    log("Data", "Received raw body:", "\033[90m")
+    log("JSON", json.dumps(data, indent=2), "\033[90m")
 
     event_type = data["subscription"]["type"]
     event = data["event"]
 
-    print(f"\n[Event] Received event: {event_type}")
+    log("Event", f"Received event: {event_type}", "\033[96m")
 
     if event_type == "channel.channel_points_custom_reward_redemption.add":
-        print(f"Channel Points")
         reward = event["reward"]["title"]
-        print(f"Channel Point Redeemed: {reward}")
+        log("Points", f"Channel Point Redeemed: {reward}", "\033[92m")
         asyncio.create_task(forward_reward(reward))
-
 
     elif event_type == "channel.subscribe":
         user = event["user_name"]
         tier = event["tier"]
         is_prime = event.get("is_prime", False)
-        print(f"\n{user} just subscribed!")
+        log("Sub", f"{user} just subscribed!", "\033[95m")
         if is_prime:
-            print(f"[Type] Prime sub!")
+            log("Type", "Prime sub!", "\033[94m")
         else:
-            print(f"[Type] Tier {int(tier) // 1000} sub!")
+            log("Type", f"Tier {int(tier) // 1000} sub!", "\033[94m")
         asyncio.create_task(forward_reward(f"sub{tier}"))
-
 
     elif event_type == "channel.follow":
         user = event["user_name"]
-        print(f"\n[Event] New follower: {user}")
+        log("Follow", f"New follower: {user}", "\033[93m")
         asyncio.create_task(forward_reward("follow"))
 
     elif event_type == "channel.cheer":
         user = event.get("user_name", "unknown")
         bits = int(event.get("bits", 0))
-        print(f"\n[Event] {user} just cheered {bits} bits!")
+        log("Cheer", f"{user} just cheered {bits} bits!", "\033[96m")
         asyncio.create_task(forward_cheer(user, bits))
 
     return web.Response(status=200)

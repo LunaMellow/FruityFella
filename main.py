@@ -13,6 +13,7 @@ from twitchio.ext import commands
 from utils.util import play_sound, send_fake_event
 from classes.hue_client import HueClient
 from classes.consts import Consts
+from utils.util import log
 
 class Bot(commands.Bot):
 
@@ -77,7 +78,7 @@ class Bot(commands.Bot):
                 await ctx.send(f"Mock sub sent! Server responded with status {status}")
 
     @commands.command(name="mockprime")
-    async def mocksub(self, ctx):
+    async def mockprime(self, ctx):
         await ctx.send("Mocking a prime subscription event...")
 
         payload = \
@@ -173,30 +174,30 @@ class Bot(commands.Bot):
             await self.push_overlay_event(reward)
 
         if reward == "flashbang":
-            print("[Trigger] Flashbang Triggered")
+            log("Trigger", "Flashbang", "\033[93m")
             await self.flashbang_internal()
         elif reward == "gold":
-            print("[Trigger] Gold Triggered")
+            log("Trigger", "Gold", "\033[93m")
             await self.gold_internal()
         elif reward == "fbi":
-            print("[Trigger] Fbi Triggered")
+            log("Trigger", "Fbi", "\033[93m")
             await self.fbi_internal()
         elif reward == "love":
-            print("[Trigger] Love Triggered")
+            log("Trigger", "Love", "\033[93m")
             await self.love_internal()
         elif reward == "sub1000":
-            print("[Trigger] Subscription tier 1 Triggered")
+            log("Trigger", "Subscription tier 1 Triggered", "\033[93m")
             await self.party_internal()
         elif reward == "sub2000":
-            print("[Trigger] Subscription tier 2 Triggered")
+            log("Trigger", "Subscription tier 2 Triggered", "\033[93m")
             await self.party_internal()
         elif reward == "sub3000":
-            print("[Trigger] Subscription tier 3 Triggered")
+            log("Trigger", "Subscription tier 3 Triggered", "\033[93m")
             await self.party_internal()
         elif reward == "follow":
-            print("[Trigger] Follow Triggered")
+            log("Trigger", "Follow Triggered", "\033[93m")
         else:
-            print(f"[Trigger] Unknown reward or cheer amount: {reward_name}, bits={bits}")
+            log("Trigger", f"Unknown reward or cheer amount: {reward_name}, bits={bits}", "\033[93m")
 
     async def flashbang_internal(self):
         asyncio.create_task(play_sound("assets/flash.mp3"))
@@ -251,7 +252,7 @@ class Bot(commands.Bot):
             reward = data.get("reward")
             bits = data.get("bits")
 
-            print(f"\n[Webhook] Received internal trigger: reward={reward}, bits={bits}")
+            log("Webhook", f"Received internal trigger: reward={reward}, bits={bits}", "\033[92m", True)
             await self.trigger_reward(reward_name=reward, bits=bits)
             return web.Response(text="ok")
 
@@ -277,27 +278,25 @@ class Bot(commands.Bot):
             except asyncio.CancelledError:
                 self.clients.remove(response)
 
-        # ✅ Register routes first — before starting the server
         app.router.add_post("/trigger", handle_trigger)
         app.router.add_get("/overlay", handle_overlay)
         app.router.add_get("/overlay-events", overlay_events)
 
-        # ✅ Start server after all routes are registered
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, "localhost", 6969)
         await site.start()
-        print("[API] Bot internal API running on http://localhost:6969")
+        log("API", "Bot internal API running on http://localhost:6969!\n", "\033[95m")
 
     async def event_ready(self):
-        print(f"\n[Twitch] Logging in as {self.nick}"
-              f"\n================================================")
+        log("Twitch", f"Logging in as {self.nick}", "\033[92m", True)
+        print(f"================================================")
         await self.start_webhook_server()
 
     async def event_message(self, message):
         if not message.author:
             return
-        print(f'{message.author.name}: {message.content}')
+        log("User", f"{message.author.name}: {message.content}", "\033[90m")
         await self.handle_commands(message)
 
 if __name__ == "__main__":
